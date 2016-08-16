@@ -1,0 +1,694 @@
+8.15
+
+
+8.14
+1.培训学习服务器硬件的配置,使用工具CPU-Z和GPU-Z
+2.测试项目,双击管点不能显示台账,原因id不存在,后来重新更新3D数据,成功.
+管线数据缺失,原因分页传递数据的参数错误,导致数据不全
+3.下载czml-write项目,有java和DotNet两个版本,然而并不会用
+
+8.13
+1.使用官方地下插件,首页的地图无法使用,换一个地图后能够显示自定义的开挖区域,开挖后区域显示自定义的图层,但这个图层不知怎么制作,无果.
+2.对于所有的管道和管点,因为使用数据库的数据显示在地面上方,当自定义为负数时,出现在地下,有一定视角时能够看到地下的管点,当视角放平时,管点消失不见.
+3.对于水体效果,看了https://github.com/AnalyticalGraphicsInc/czml-writer这里,如何制作czml,java和DotNet,表示看不懂
+4.三通四通,直接采用自带的方法:
+var Tube = viewer.entities.add({
+    polylineVolume : {
+        positions : Cesium.Cartesian3.fromDegreesArray([-85.0, 32.0,
+                                                        -85.0, 36.0,
+                                                        -89.0, 36.0]),//经纬度,不带高程,光滑的曲线
+        shape : computeCircle(60000.0),//半径
+        material : Cesium.Color.RED//颜色
+    }
+});
+
+8.12
+CZML Structure,json子集,配置项有id(唯一),position(位置),Intervals(间隔,设置动画,插值算法),cartesian(笛卡尔坐标),Availability(开始与结束)
+这应该也有工具生成,不可能纯手写,数据量太大,但是官方没有提供,也没有找到
+加载CZML:Cesium.CzmlDataSource.load(data, options)
+
+8.11
+调试cesium-groundpush-plugin项目,使用1.24最新版cesium,更改被改变的方法,在core中增加Rectangle.isEmpty()方法,仍然是黑色图层. 
+去掉entity的双击事件:viewer.screenSpaceEventHandler.setInputAction(function(){},Cesium.ScreenSpaceEventType.LEFT_DOUBLE_CLICK );
+加载agi官方提供的地形图层方法:
+var cesiumTerrainProviderMeshes = new Cesium.CesiumTerrainProvider({
+    url : 'https://assets.agi.com/stk-terrain/world',
+    requestWaterMask : true,
+    requestVertexNormals : true
+});
+viewer.terrainProvider = cesiumTerrainProviderMeshes;
+
+8.10
+下载地下开挖插件cesium-groundpush-plugin,有四种版本b26,b27,b28,和1.2,测试了1.2的example中的例子,开挖的区域是一个矩形,然而运行时时,整个地球都是黑色的图层,
+又把cesium更新到的1.24最新版,许多方法又被更改,比如:
+Rectangle.intersectWith()方法被改为Rectangle.intersection()
+Rectangle.isEmpty()方法被遗弃
+Camera.viewRectangle()方法被遗弃,增加Camera.setView({destination: rectangle})
+添加图层的TileMapServiceImageryProvider()被遗弃,改用createTileMapServiceImageryProvider()
+github地址:https://github.com/NICTA/cesium-groundpush-plugin
+
+8.9
+在通过屏幕坐标找到经纬度时,当视图旋转到天空后,获取不了,cesium.js报错,确定屏幕右下角的坐标:
+var result = viewer.camera.pickEllipsoid(new Cesium.Cartesian2 ( viewer.canvas.clientWidth, viewer.canvas.clientHeight));
+var curPosition = Cesium.Ellipsoid.WGS84.cartesianToCartographic(result);
+var lon = curPosition.longitude*180/Math.PI;//经度
+var lat = curPosition.latitude*180/Math.PI;//纬度
+
+
+8.8
+增加监听视角变换方法,通过屏幕坐标找到经纬度和高度,方法在camera中,代码:
+viewer.camera.moveEnd.addEventListener(function(moveEndPosition){
+var pt1 = new Cesium.Cartesian2(0,0);
+	var pt2= new Cesium.Cartesian2(500,500);
+	var pick1= viewer.scene.globe.pick(viewer.camera.getPickRay(pt1), viewer.scene);
+	var pick2= viewer.scene.globe.pick(viewer.camera.getPickRay(pt2), viewer.scene);
+	//将三维坐标转成地理坐标
+	var geoPt1= viewer.scene.globe.ellipsoid.cartesianToCartographic(pick1);
+	var geoPt2= viewer.scene.globe.ellipsoid.cartesianToCartographic(pick2);
+	//地理坐标转换为经纬度坐标
+	var point1=[geoPt1.longitude / Math.PI * 180,geoPt1.latitude / Math.PI * 180];            
+	var point2=[geoPt2.longitude / Math.PI * 180,geoPt2.latitude / Math.PI * 180];		
+	alert(point1+"...."+point2);
+	//alert(scene.camera.up+'...'+'viewer.upWC');		
+	var scene = viewer.scene;
+	var ellipsoid = scene.globe.ellipsoid;
+	var height=ellipsoid.cartesianToCartographic(viewer.camera.position).height;
+	 alert(height);
+});
+对管点管线数据进行切片
+
+
+8.6
+首先把最新版的cesium移植过来出了问题,很多方法启用和更新,就在原来b30版本修改,使用cesium的api渲染了10000个圆柱体,依然很卡,所以就只能采用动态加载的方式加载大数据,对数据进行LOD,然后在cesium中写加载算法,对模型进行控制,剔除不在视角内的模型
+
+8.5
+论坛留言回复：3d-tiles技术尚未成熟，没有对外开源，转换工具也未提供。所以对大数据的加载问题，这个技术无法展开实施
+暂时的解决的方法，动态加载当前视图的管段。
+
+8.4
+cesium官网更新3d-tiles-tools项目,这些工具用来调试,分析,验证3d tiles tilesets,开发工具将在16年秋天更新，关注https://github.com/AnalyticalGraphicsInc/3d-tiles-tools/issues/1
+下载官方提供的New York数据包，没有任何错误提示，但是不能显示
+在webgl上，threejs也很强大，但是涉及图形化渲染的远离比较多，只是看了光方提供的示例http://threejs.org/
+
+8.3
+继续学习3d-tiles技术，发现url中b3dm文件也是模型文件，是gltf的拓展，官方暂时没有提供工具，更新通知https://groups.google.com/forum/#!forum/cesium-dev
+在官网博客中找到glb文件的例子，gltf转换成glb,github地址
+https://github.com/AnalyticalGraphicsInc/gltf-pipeline
+
+8.2
+下载cesium-1.24最新版,更新日志：https://github.com/AnalyticalGraphicsInc/cesium/blob/master/CHANGES.md
+用git clone的版本没有built文件夹，使用npm和gulp命令进行编译出现Built文件夹，存放cesium开发用的js文件和一些地图数据。
+对于3D tiles技术，因为没有数据，只能展示官方提供的示例
+
+8.1
+看cesium官网论坛的有关加载大批量模型的问题，3d-tiles技术比较新，资料少，只学会了基本的内容框架，至于框架里的具体参数，数据量很大，应该是有工具生成的，而不是手写出来，但是具体什么工具没有找到，应该是官网没有提供
+
+7.28
+用火狐浏览器的firebug查看cesium中demo的New York City的示例,在XHR中GET请求了tileset.json文件
+主要是渲染三维模型，tileset.json在root对象中包含5个对象
+1.boundingVolume：{region[6]}
+2.geometricError:
+3.refine:"add"
+4.content:{url:"0.b3dm"  //文件
+	    boundingVolume:{}}
+5:children:{子对象}
+在XHR中也加载了这些.b3dm文件，对模型的一种描述
+创建b3dm模型,
+var viewer = new Cesium.Viewer('cesiumContainer');
+var tileset = viewer.scene.primitives.add(new Cesium.Cesium3DTileset({
+    url : '/path/to/3d/tileset'  //tileset.json文件
+}));
+原来master分支下没有Cesium3DTileset,在3d-tiles分支下,用git命令克隆
+git clone https://github.com/AnalyticalGraphicsInc/cesium --branch 3d-tiles --single-branch
+
+7.27
+3D Tiles 中tileset.json文件顶级对象有四个属性：asset,properties,geometricError,root
+"asset"：{"version":""//3D tile版本的字符串
+	"tilesetVersion":""//可选的,应用特定版本}
+"properties":{}//对象的属性,如Height属性
+"geometricError":{}非负数定义的错误
+"root":{}json对象
+
+7.26
+GeoJSON 是用于描述地理空间信息的数据格式
+type可以为Geometry或Feature或FeatureCollection
+1.{”type“："Point"(Point、MultiPoint、LineString、MultiLineString、Polygon、MultiPolygon)
+  "coordinates":(坐标)[100,40]
+}
+2.{"type":"GeomertyCollection"
+    "geometries":[{Point},{LineString}]
+    }
+3.{"type":"Feature"
+   "geometry":{1几何体对象}
+   "properties":{json对象}
+}
+4.{"type":"FeatureCollection",
+   "feature":[{feature对象},{}]
+   }
+在线制作geojson http://geojson.io/
+TopoJSON 是 GeoJSON 简化后的版本
+添加实体：Boxes,Circles, Ellipses,Corridor,Cylinder,Cones,Polygons,Polylines,Polyline Volumes,Rectangles,Spheres,Ellipsoids,Walls.
+var greenCylinder = viewer.entities.add({  
+    name : 'Green cylinder with black outline',  
+    position: Cesium.Cartesian3.fromDegrees(-100.0, 40.0, 200000.0),  //位置坐标
+    cylinder : { //圆柱  
+        length : 400000.0, //高度 
+        topRadius : 200000.0, // 上底
+        bottomRadius : 200000.0,//  下底
+        material : Cesium.Color.BLACK,//材质  
+        outline : true,  //轮廓
+        outlineColor : Cesium.Color.WHITE//  
+    }  
+});
+
+7.25
+cesiumjs中加载大量三维模型的技术3Dtiles，查了很多资料，貌似没有中文的，只有官方github上有说明
+为批量模型加载添加一个快速索引和数据集的整体性描述，就减少渲染欢欢中需要处理的实体数据量。
+https://github.com/AnalyticalGraphicsInc/cesium/tree/3d-tiles/Specs/Data/Cesium3DTiles 
+官方的文档介绍http://cesiumjs.org/2015/08/10/Introducing-3D-Tiles/
+
+
+7.22
+camera 中flyTo({
+	destination://目的地
+	complete：function(){}//完成后回调函数
+	cancle:function(){}//飞入被取消后执行函数
+})
+Cesium.Cartesian3(x, y, z)xyz坐标
+Cartographic(longitude, latitude, height)经纬度弧度 高度米
+Cesium提供了CesiumMath()静态类，用于数学计算
+提供日期类 Cesium.JulianDate(),儒略日期？
+objectToQuery(obj)将对象转换为键值对的字符串
+combine(obj1, obj2, deep)两个对象合并成一个object
+
+7.21
+鼠标点选功能的实现：
+var handler = new Cesium.ScreenSpaceEventHandler(scene.canvas);
+handler.setInputAction(function (movement) {//绑定事件
+    var pick = scene.pick(movement.position);
+    if (Cesium.defined(pick) && (pick.id === 'my rectangle'/*实体ID*/)) {
+      alert('Mouse clicked rectangle.');
+    }
+  }, Cesium.ScreenSpaceEventType.LEFT_CLICK/*鼠标左击动作*/);
+Appearance外观的使用：Cesium提供了5种外观类
+定义一个 var appearance  = new Cesium.PerInstanceColorAppearance({
+  translucent : false,
+  closed : true
+});
+然后在属性中添加：
+var primitive = new Cesium.Primitive({
+    geometryInstances : circleInstance,//实体
+    appearance : appearance
+});
+键值对数组：new Cesium.AssociativeArray()
+
+7.20
+cesium官网中tutorials(教程)：
+加载地形数据：
+var terrainProvider = new Cesium.CesiumTerrainProvider({
+    url : '//assets.agi.com/stk-terrain/world'
+});
+viewer.terrainProvider = terrainProvider;
+地形数据提供商，还有Arcgis Image Server ,TheWorld Server
+Camera视图部分，可以监听鼠标键盘，具体代码见实例
+3D Models 动画，点选
+7.19
+cesium-1.23版本的Sandcastle示例中beginner和DataSources，
+地图针的添加：
+var pinBuilder = new Cesium.PinBuilder();
+var pin=viewer.enetities.add({  //添加实体
+	name:'',
+	position:  ,
+	billboard:{}
+})
+Cesium.when.all([pin], function(pins){  //等待加载
+    viewer.zoomTo(pins);
+})
+展示二维地图：
+在创建viewer时，设置属性sceneMode : Cesium.SceneMode.SCENE2D,
+			mapMode2D : Cesium.MapMode2D.ROTATE
+展示或隐藏实体：show方法 entities.show=!entities.show;
+将视图放在指定区域：
+viewer.camera.setView({
+    destination: Cesium.Rectangle.fromDegrees(114.591, -45.837, 148.970, -5.730)
+});
+添加一个WMS图层：
+var imageryLayers = viewer.imageryLayers;
+imageryLayers.addImageryProvider(new Cesium.WebMapServiceImageryProvider({
+    url : '',
+    layers : '',
+    parameters : {
+        transparent : true,
+        format : 'image/png'
+    }
+}));
+加载CZML,geojson,KML：
+viewer.dataSources.add(Cesium.CzmlDataSource.load(''));
+viewer.dataSources.add(Cesium.GeoJsonDataSource.load(''),{});
+viewer.dataSources.add(Cesium.KmlDataSource.load('', {}));
+
+7.18
+git克隆服务器中gis项目，发现没有packages文件夹，引用组件不能用，而且cesium-b30-test文件及下缺少文件，不能使用
+所以就用以前的项目，添加cesium-b30-test文件夹。
+学习cesium，添加各种geometries，如box,ellipses,circles,polygon,rectangle等
+主要代码：
+viewer.entities.add({
+	name:'',
+	position:'',
+	geometry:{}    //添加的几何体及参数
+});
+
+7.15
+下载安装node.js，学习了一点nodejs,使用node.js搭建服务器，在cesium官网下载cesium-1.23版本，部署在服务器端,
+继续看Sandcastle里的各种例子。
+这一周就画了两个模型，完成两个方法，其余时间就学习cesium了，但也只是了解了个大概而已
+
+7.14
+查阅cesium官方文档，看官网提供的代码示例
+创建一个三维实体：viewer.entities.add({
+        name : url,
+        position : position,//位置
+        orientation : orientation,
+        model : {
+            uri : url,//模型地址，gltf格式
+            minimumPixelSize : 128,
+            maximumScale : 20000
+        }
+    });
+定位到一个点：function flyToSanDiego() {
+    Sandcastle.declare(flyToSanDiego);
+    viewer.camera.flyTo({
+        destination : Cesium.Cartesian3.fromDegrees(-117.16, 32.71, 15000.0)//经纬度高程
+    });
+}
+CZML动画。
+7.13
+1.编写方法，判断三维空间中两向量的夹角
+已知a=(x1,y1,z1), b=(x2,y2,z2)两向量,
+cos<a,b>=(x1*x2+y1*y2+z1*z2)/[√(x1^2+y1^2+z1^2)*√(x2^2+y2^2+z2^2)]
+2. 查阅资料http://blog.csdn.net/zangle260 有关cesiumjs开发实践
+js没学好，又加上三维的东西，很费力啊-_-!
+
+
+7.12
+测试方法，完成方法后一直以为数据库中数据出现错误，后来才发现只是用这个方法选出的两端管段与数据库种不同
+比如三通管件T，能够选出两条数据，四通管件+就能选出四条数据，而方法中只是选出一条
+对于有倾斜角度的两条管段，在三维空间中，求出三维向量坐标
+
+7.11
+查询出起点或终点是中心点的所有点，返回List<_3dpoint>
+如果集合有两条记录，则是直线，直接添加
+如果是三条或四条记录，说明是三通或四通，两次循环，求出管段向量夹角，返回最小的集合
+insert语句插入到数据库
+7.7
+1.将TDGisController中的PointsJson方法的linq语句修改为sql语句
+2.测试SelectPoint方法，方法不能为静态，否则URL访问不了，两个Boolean不能用&&
+3.破解SketchUp2014并学习基础教程
+7.6
+已知参数中心点和一条管段id，返回向量夹角大概为90度的管段：
+1.根据给定管段id查出起始点，计算该管段向量坐标。
+2.根据给定的中心点，查找所有端点在中心点的管段，求出向量坐标
+3.循环遍历2中的管段，求出1中和2中的向量夹角，返回夹角的余弦值最小的管段。
+看pipeline.js中添加管道和弯头的方法，矩阵变换？坐标转换？四元数？哎，头疼，继续看！
+
+7.5
+1.添加管道pipeline.AddGuanDao(起点,终点,半径,颜色)返回管道走向，终点减起点
+  添加弯头pipeline.AddWanTou('模型路径',中心点或终点,管道方向1，管道方向2,缩放比例)
+  scene.primitives.add(pipeline.Primitives)
+  createModel('模型路径',0.0)
+2.加载自己的地图：
+widget = new Cesium.CesiumWidget('cesiumContainer', {
+        imageryProvider: new Cesium.WebMapServiceImageryProvider({
+            url: '//192.168.0.80/htwebgis/tilecache/tilecache.py',
+            layers:'bjw',
+            rectangle: Cesium.Rectangle.fromDegrees(115.400000,39.438300,117.500000,41.538300)
+5903行：GeographicTilingScheme
+112473行：WebMapServiceImageryProvider
+3.查找向量夹角方法，用三角函数判断是否在给定范围内
+7.4
+阅读民科项目源码，主要看控制器里的各种方法，
+对于数据查找：返回结果为ActionResult，用sql语句或Linq语句查询的结果放入Data中，
+对于数据的增删改：更新完数据后，返回string字符串表示更新结果是否成功
+还有一些其他的方法：导入excel表格数据，word转换为html格式
+在informationEditController中看见svg的有关代码，在w3school中又了解了svg的基础知识
+
+7.1
+1.解决错误：“错误：System.Runtime.InteropServices.COMException (0x800A1098): 因为没有打开的文档，所以这一命令无效”
+com组件 word属性赋予所有权限
+2.测试用户管理模块时
+在渤海新区下添加用户后不能删除
+删除原有用户时tree不能及时更新
+
+6.15 6.16 6.20  6.27 请假
+
+6.30
+1.在刘枫的帮助下，使用git同步雄县项目，后有对git进行版本升级到2.9.0
+2.对民科项目进行测试，一开始时系统中还有数据，删除后无法导入各源项排查报告，错误信息：
+无法将类型为“Microsoft.Office.Interop.Word.ApplicationClass”的 COM 对象强制转换为接口类型“Microsoft.Office.Interop.Word._Application”。
+此操作失败的原因是对 IID 为“{00020970-0000-0000-C000-000000000046}”的接口的 COM 组件调用 QueryInterface 因以下错误而失败: 库没有注册。 (异常来自 HRESULT:0x8002801D (TYPE_E_LIBNOTREGISTERED))。
+百度结果出现原因：可能是安装office时安装过不同版本造成的
+测试P&ID图 储运下拉无法使用
+
+6.28
+解决上次遗留的错误，第一，创建数据模型时字段填写错误，导致加载不出数据
+第二，string.Format(string format，params object[] args)这个方法用错，将指定字符串中的格式项替换为指定数组中相应对象的字符串表示形式。
+在拼接sql语句是应避免用累加
+
+6.24
+实现导入坐标文件传入后台，data坐标是一个字符串，用Split()进行分割两次，得到坐标，
+拼接sql语句，进行查询，调试过程中，把两条sql语句提取出来均能查询到结果，然而
+lh = db.Database.SqlQuery<string>(string.Format(bbsql)).ToList()[0];这里出现错误，原因还没找到
+
+6.23
+新建一个实体类，用来存储三维点的xyz坐标，读取坐标文件，返回结果JsonResult格式。
+最后找到一个decode()方法，然后循环遍历，没能实现，明天继续吧
+
+6.22
+添加Excel文件导入坐标，dataset未初始化，导致返回为空
+
+6.21
+1.打开熊县项目时，又出现不能加载地图的问题，实在没办法重启了电脑，结果又好了，不知道原因是什么。
+2.读取.xls文件，读取方式：
+//创建一个数据链接
+string strConn = "Provider=Microsoft.Ace.OleDb.12.0;" + "data source=" + filenameurl + ";Extended Properties='Excel 12.0; HDR=NO; IMEX=1'";
+OleDbConnection myConn = new OleDbConnection (strCon) ;
+string strCom = " SELECT * FROM [Sheet1$] " ;
+myConn.Open () ;
+//打开数据链接，得到一个数据集
+OleDbDataAdapter myCommand = new OleDbDataAdapter (strCom , myConn) ;
+//创建一个 DataSet对象
+DataSet myDataSet = new DataSet () ;
+//得到自己的DataSet对象
+myCommand.Fill ( myDataSet , "[Sheet1$]" ) ;
+//关闭此数据链接
+myConn.Close () ;
+只能读取文件中的一个工作区间即，sheet1，应该还有一个方法获取多个工作区间，继续学习。
+
+6.17
+使用git克隆雄县项目，克隆完成后不能加载，后发现原因：克隆路径名称不匹配
+修改后加载成功，打开项目却不能正确加载地图，一开始以为Python路径不正确，修改后仍不能加载，
+最后发现原来是：在我清理C盘的时候，地图maps被移动到F盘了，这一天光找bug了
+
+6.14
+学习Openlayers
+OpenLayers.Layer.WMS类来创建WMS图层，四个参数(name,url,params,options)
+图层有两种，base layer(一个)和overlay layers(可以多个)
+创建成功后添加到map里
+学习博客:
+http://blog.csdn.net/withasi/archive/2009/02/06/3866124.aspx
+http://blog.csdn.net/withasi/archive/2009/02/06/3866148.aspx
+
+
+6.13
+1.练习在vs中使用git
+http://blog.csdn.net/bodybo/article/details/38976549
+
+2.http://www.liaoxuefeng.com/wiki/0013739516305929606dd18361248578c67b8067c8c017b000
+git教程，基于命令行，新增版本回退，管理修改，关联github,分支管理，虽然要敲各种命令，但感觉比vs中集成的git容易理解
+
+6.12
+1.gitblit服务器端创建仓库
+2.vs客户端克隆项目，提交修改的文件，同步到服务器端
+
+6.3
+空间信息处理的使用：
+1.为表增加一个几何字段：
+select AddGeometryColumn('public', 'table_name', 'geom_col_name', 4326, 'POINT', 2)
+2.可以使用以下语句为表新建一个约束(类型检查)：
+ALTER TABLE table_name ADD CONSTRAINT geometry_valid CHECK (IsValid(geom_col_name))
+3.创建索引
+CREATE INDEX index_name ON public.table_name USING gist(geom_col_name);
+创建路网拓扑结构：
+1.添加起点id，source，终点id，target，道路权值，length
+2.为表创建拓扑布局：SELECT pgr_createTopology('public.table_name',0.00001, 'geom', 'gid');
+3.为source和target创建索引：CREATE INDEX source_idx ON table_name("source");
+CREATE INDEX target_idx ON table_name("target");
+4.为length赋值：update table_name set length =st_length(geom);
+使用pgrouting中的函数进行数据处理
+
+
+6.2
+1.有关TopoGeometry的构造函数，访问函数，以及输出格式
+2.http://workshop.pgrouting.org/ pgrouting插件的使用，主要是提供路径分析的功能
+
+
+6.1
+1.查找有关拓扑结构的资料http://resources.arcgis.com/zh-cn/help/main/10.1/index.html#/na/006200000001000000/
+了解了一些基础
+2.拓扑结构中TopoGeometry 类型
+3.拓扑构造函数：创建新的拓扑结构，从已存在的复制
+4.拓扑编辑函数：ST_AddEdgeNewFaces()增加一条线分割面
+5.拓扑读取函数：包括读取有关的id
+6.拓扑处理函数：AddNode() AddEdge()AddFace()添加点线面
+文档中的例子没法试验，只是尝试了解这些函数
+
+5.9
+1.HTML基础教程——基本语法，各种标签的使用，样式，链接表单的使用
+2.CSS3教程——过渡，练习简单的控制网页的样式和布局
+
+5.10
+1.CSS3教程创建动画，多列和用户界面的使用
+2.JavaScript基础教程，DOM基础，DOM操作表格和样式，事件入门
+3.jQuery视频01~05基础核心，常规选择器的使用
+
+
+5.11
+jQuery视频06~16,常规选择器和过滤选择器，表单选择器的使用，基础DOM和CSS操作，DOM节点操作
+
+5.12
+1.事件对象，属性type,target(得到触发元素的DOM)currentTarget(得到的是监听元素的DOM),data,pageX,client,screenX等
+  冒泡行为，阻止.stopPropagetion(),阻止默认行为.preventDefault()
+2.高级事件，模拟操作trigger('点击事件'),命名空间，事件委托.on().off()
+3.动画效果，显示.show()隐藏.hide()切换.toggle().列队动画，递归自调用.
+  自定义动画.animate()参数，{}一个对象，键值对形式.连缀调用，实现列队动画
+4.Ajax异步处理方式  .load()局部方法   .get().post()全局方法
+  .ajax()全局方法 最重要的四个参数：url,type,data,success:function(reponse,status.xhr)
+  表单序列化，serialize(),还可以用于复选框，单选框，下拉列表框等
+
+5.13
+1.Ajax异步处理方式 .Ajax()的其他参数   错误处理，局部和全局
+  两个全局事件.ajaxStart()和.ajaxStop()绑定在document元素上
+2.工具函数和插件的使用.
+3.解读jQuery文档
+
+5.23
+1.向图形中添加单行文字(Text)和多行文字(MText),标注的概念，使用，三种标注样式
+2.三维空间，创建简单的三维对象(线框、网格、多面网格、实体)
+3.布局和视图，理解不够，还需学习
+
+5.24
+1.总结AutoCAD.net开发手册，控制AutoCAD环境，创建和编辑图元对象，使用图层颜色和线型，创建三维对象，使用事件对象
+
+2.postgresql数据库入门，数据类型，新接触的geometry类型
+
+3.pgAdmin III工具的使用，数据库及表的创建与修改，索引和视图的使用，基础函数，自定义函数
+
+5.30
+1.栅格支持的数据类型：raster，geomval，histogram，reclassarg，summarystats(后几种没接触到，还需查找资料)
+2.基本管理函数：AddRasterConstraints()添加一个栅格约束，ST_GDALDrivers()支持的栅格格式
+3.栅格构造器：ST_AddBand，ST_AsRaster，ST_MakeEmptyRaster，ST_GeoReference
+4.栅格访问器：访问栅格有关的元数据ST_MetaData
+5.栅格波段访问器:ST_BandMetaData, ST_BandNoDataValue
+
+5.31
+1.栅格波段读写函数：ST_PixelAsPolygon界定像素行列的多边形
+ST_Value和ST_SetValue读取和设置value值
+2.栅格编辑器：ST_SetGeoReference修改rast的六个参数，ST_SnapToGrid重新取样，将栅格像素吸附到网格上
+3.栅格波段编辑函数
+4.栅格波段统计分析函数：ST_Count统计像素数目，ST_Histogram返回直观图数据
+5.栅格输出函数：ＷＫＢ，ＪＰＥＧ，ＰＮＦ，ＴＩＦＦ格式
+６.栅格处理函数：ST_Clip裁剪，ST_Envelope栅格范围内的多边形，ST_ConvexHull外接对象
+ST_Intersection相交的部分，ST_Union多个栅格合并为一个
+７.内置的栅格处理函数：返回有关像素处理后的值
+８.操作符：＆＆是否重叠，＆＜边框左边，＆＞边框右边
+ 
+
+ 1.Extjs高级组件form的使用 Ext.form.Panel
+    组件combobox  local和remot两种模式
+    组件timefield和datafield
+    组件textfield和textareafield
+ 2.panel和layout布局中的12种布局，简单使用
+ 3.回顾以前视频，数据模型model，数据集store，数据代理proxy,Ajax请求
+
+Ext.Ajax.request({
+                    url: '/People/save',
+                    method: 'POST',
+                    timeout: 3000,
+                    params: { data:"["+"000"+","+"0000"+","+manager+","+1+","+"aaaaaaaaa"+","+"ssss"+","+"root"+","+"true"+"]"},
+                    success: function (res, opts) {
+                        alert(res.responseText());
+                    },
+                    failure: function () { }
+                }); 
+ 
+ data:["id":"000",
+	"pid":"0000",
+	"manager":"manager",
+	"orderIndex":1,
+	"info":"aaaaaaaaa",
+	"text":"ssss",
+	"nodeType":"root",
+	"leaf":"true"
+	]
+ 
+ 1.练习panel与各种layout
+ 2.正则表达式的简单使用
+ 3.form表单的使用，前端提交后，没能在后台接受请求，查找资料后有方法Request.Params
+ 
+ 
+ Ext.get('b2').on('click', function () {
+        //ajax请求服务器导出CAD
+        Ext.Ajax.request({
+            url: '/People/json',
+            params: {},
+            method: 'POST',
+            timeout: 300000,//因为CAD导出时间较长设置为30秒超时
+            success: function (response, opts) {//成功回调函数
+                Ext.MessageBox.alert('b2', response.responseText);
+            },
+            failure: function (response, opts) {//失败回调函数
+                
+                Ext.MessageBox.alert('提示', '导出CAD失败，请联系管理员！');
+            }
+        });
+    });
+
+
+１．js类的声明，对象的创建。
+原始方法用EXTJS4创建一个window
+利用一个按钮触发window窗体，了解一下ＥＸＴＪＳ的事件机制。 
+用ＥＸＴＪＳ的ｃｒｅａｔｅ创建ｗｉｎｄｏｗ
+利用ｄｅｆｉｎｅ自定义一个类继承ｗｉｎｄｏｗ　
+ｒｅｑｕｉｒｅｓ　Ｊｓ的异步加载
+ｃｏｎｆｉｇ　自动的ｇｅｔ和ｓｅｔ
+ｍｉｘｉｎｓ类的混合，实现类的多继承。
+２．创建数据模型类三种
+Ｅｘｔ．ｄｅｆｉｎｅ（）需要继承Ｅｘｔ．ｄａｔａ．Ｍｏｄｅｌ类
+Ｅｘｔ．ｒｅｇＭｏｄｅｌ（）
+实例化数据模型类
+ｎｅｗ
+Ｅｘｔ．ｃｒｅａｔｅ（）
+Ｅｘｔ．ｍｏｄｅｌ．ｃｒｅａｔｅ（）
+数据验证ｖａｌｉｄａｔｉｏｎｓ
+３．数据代理分为客户端代理和服务器代理
+客户端代理
+普通的内存代理　浏览器客户端存储代理　本地化的级别代理
+服务器端代理
+异步加载的方式Ａｊａｘ
+跨域交互的代理ＪｓｏｎＰ
+
+
+
+1.Xml Reader 和JSON Reader代理来读取服务端响应的JSON格式的返回值. 一般用于将结果加载成一个数据集store,
+而store 就是把model中的数据收集起来形成一个集合组，这个集合组把数据提供给可视化界面
+2.事件机制，三种事件绑定方式
+所有的事件机制需要继承Ext.util.Observable
+时间可分为标准事件（键盘按下，鼠标单双击，滑过滑动）和业务事件
+3.grid高级组件，创建一个表格，并能设置一些表格参数，数据显示未能实现
+
+Ext.create('Ext.data.Store', {
+    model: user,
+    storeId: 's_user',
+    proxy: {
+        type: 'ajax',
+        url: '/People/json',
+        reader: {
+            type: 'json',
+            root: ''    
+        }
+    },
+    autoLoad:true
+});
+
+
+Ext.define('user', {
+    extend: 'Ext.data.Model',
+    fields: [
+        { name: 'UserCode', type: 'string' },
+        { name: 'PassWord', type: 'string' }
+    ],
+    proxy: { type: 'memory' }
+});
+//var user = Ext.data.Store({
+//    data: [
+//        { UserCode: '1234', PassWord: '1234' },
+//        { UserCode: '12345', PassWord: '12345' }
+//    ],
+//    model: 'user',
+//    autoLoad: true
+//   });
+Ext.create('Ext.data.Store', {
+    model:'user',
+    storeId: 's_user',
+    proxy: {
+        type: 'ajax',
+        url: '/People/json',
+        reader: {
+            type: 'json',
+            root: ''
+        },
+        writer: {type:'json'}
+    },
+    autoLoad: true
+});
+
+
+1.选择模式的根类Ext.selection.Model
+   撤销选择deselect()   得到选择的数据getSelecyion()  得到最后被选择的数据getLastSelected()
+   隐藏一个单元格的选择模式selType  多选框选择器Ext.selection.CheckboxModel
+2 表格特性Ext.grid.feature.Feature
+    Ext.grid.feature.Rowbody 表格的行体
+    Ext.grid.feature.summary 摘要
+    Ext.grid.feature.Grouping 分组
+  其他  pagingtoolbar分页组件两种方式  Ext.grid.property.Grid属性配置面板
+
+1.mvc重构grid，进一步加深对mvc模型的认识
+2.实现grid的编辑和保存功能
+3.高级组件tree，一些简单的基本使用
+
+
+launch:function(){
+            Ext.create('Ext.container.Viewport', {
+                layout: 'auto',
+                padding: "15 15 15 15",
+                renderTo: 'mainlayout',
+                items: {
+                    width: 800,
+                    height:500,
+                    xtype: 'mainlayout'
+                }
+            });
+        },
+
+
+
+
+有趣的linux命令：
+输出图形字符：
+sudo apt-get install sysvbaaner  使用：banner string
+sudo apt-get install toilet
+sudo apt-get install figlet
+
+添加眼睛：xeyes
+	  后台显示：nohup xeyes &
+
+黑客帝国：sudo apt-get install cmatrix
+	  cmatrix
+
+火焰：  安装：sudo apt-get install libaa-bin  
+	aafire
+cowsay命令，可以让你在终端里以一种动物说话的形式打印出一段话。
+# 安装
+$ sudo apt-get install cowsay
+
+# 默认是一只牛
+$ cowsay hello shiyanlou
+
+# 加上'-l'参数打印所有支持的动物（其实不只是动物）种类
+$ cowsay -l
+
+# 使用'-f'参数选择动物种类
+$ cowsay -f elephant hello shiyanlou
+
+# 此外它还可以结合我们之前的作业讲过的 fortune 命令一起使用
+$ fortune | cowsay -f daemon

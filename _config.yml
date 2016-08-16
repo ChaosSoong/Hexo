@@ -4,11 +4,11 @@
 
 # Site
 title: Chaos
-subtitle:
+subtitle: programming or die
 description: 学习管理 生活日常
 author: Chaos Soong
-language:
-timezone:
+language: zh-Hans
+timezone: Asia/Chongqing
 email: 13313020563@163.com
 
 # URL
@@ -67,6 +67,7 @@ pagination_dir: page
 Plugins:
 - hexo-generator-feed
 - hexo-generator-sitemap
+- hexo-generator-rss
 
 #Feed Atom
 feed:

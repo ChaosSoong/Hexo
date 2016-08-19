@@ -3,7 +3,7 @@
 ## Source: https://github.com/hexojs/hexo/
 
 # Site
-title: Chaos
+title: Chaos's Blog
 subtitle: programming or die
 description: 学习管理 生活日常
 author: Chaos Soong
@@ -68,6 +68,10 @@ Plugins:
 - hexo-generator-feed
 - hexo-generator-sitemap
 - hexo-generator-rss
+- hexo-generator-baidu-sitemap
+
+baidusitemap:
+    path: baidusitemap.xml
 
 #Feed Atom
 feed:
@@ -81,6 +85,7 @@ sitemap:
 
 theme: next
 
+duoshuo_shortname: likeu
 # Deployment
 ## Docs: https://hexo.io/docs/deployment.html
 deploy:

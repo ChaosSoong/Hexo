@@ -124,6 +124,8 @@ social:
   #LinkLabel: Link
     GitHub: https://github.com/ChaosSoong
     Weibo: http://weibo.com/u/3387721970
+    Zhihu: https://www.zhihu.com/people/super_chao
+    Facebook: https://www.facebook.com/profile.php?id=100012243847192
 
 # Social Links Icons
 # Icon Mapping:
@@ -135,8 +137,10 @@ social_icons:
   # Icon Mappings.
   # KeyMapsToSocalItemKey: NameOfTheIconFromFontAwesome
   GitHub: github
-  Twitter: twitter
+  #Twitter: twitter
   Weibo: weibo
+  知乎: zhihu
+  Facebook: facebook
 
 
 # Sidebar Avatar
@@ -219,7 +223,7 @@ auto_excerpt:
 # Wechat Subscriber
 wechat_subscriber:
   enabled: true
-  qcode: images/WeChat/WeChat.jpg
+  qcode: images/WeChat/WeChat.png
   description: 你敢扫试试? 试试就试试!
 
 

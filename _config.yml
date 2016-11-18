@@ -86,7 +86,7 @@ sitemap:
   path: sitemap.xml
   field: post
 
-theme: next
+theme: landscape
 
 duoshuo_shortname: likeu
 # Deployment

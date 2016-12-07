@@ -7,7 +7,7 @@ title: Chaos's Blog
 subtitle: programming or die
 description: 学习管理 生活日常
 author: Chaos Soong
-language: zh-Hans
+language: en
 timezone: Asia/Chongqing
 email: 13313020563@163.com
 
@@ -86,7 +86,7 @@ sitemap:
   path: sitemap.xml
   field: post
 
-theme: landscape
+theme: next
 
 duoshuo_shortname: likeu
 # Deployment

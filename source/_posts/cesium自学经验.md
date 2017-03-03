@@ -20,19 +20,23 @@ Cesium是一个基于JavaScript的开源框架,可用于在浏览器中绘制3D�
 
 1. 第一步就是引入Cesium.js，他里面定义的Cesium对象有我们想要的一切
 
-	< script src="Cesium/Cesium.js" >< /script>
+    <script src="Cesium/Cesium.js"></script>
+
 2. 第二步，为了使用Cesium widget，我们需要引入CesiumWidget.css
 
 	@import url(Cesium/Widgets/CesiumWidget/CesiumWidget.css);
+
 3. 第三步，在body中，创建一个div来给我们的Cesium widget使用
 
-	 < div id="cesiumContainer" > < /div>
+	 <div id="cesiumContainer"> </div>
+     
 4. 第四步，创建一个widget的实例，收工。
-
-	var cesiumWidget = new Cesium.CesiumWidget('cesiumContainer');
+    
+    var cesiumWidget = new Cesium.CesiumWidget('cesiumContainer');
 
 当然多功能的View:
-	var viewer = new Cesium.Viewer( 'cesiumContainer', {  })
+
+    var viewer = new Cesium.Viewer('cesiumContainer', {});
 
 其中可以添加各种配置项,具体详见[这里](http://cesiumjs.org/refdoc.html)
 

@@ -223,7 +223,7 @@ auto_excerpt:
 # Wechat Subscriber
 wechat_subscriber:
   enabled: true
-  qcode: imgs/WeChat/WeChat.png
+  qcode: https://ChaosSoong.github.io/imgs/WeChat/WeChat.jpg
   description: 你敢扫试试? 试试就试试!
 
 

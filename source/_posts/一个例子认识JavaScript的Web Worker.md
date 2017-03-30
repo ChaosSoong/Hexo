@@ -26,6 +26,7 @@ JavaScript是单线程的,至于为什么,简单地说,JavaScript在进行DOM操
 ## 子线程
 myworker.js中:
 
+    // importScripts('fn.js');//引入外部脚本,不允许跨域
     var num;
     onmessage = function(event) {   //子线程中也是利用onmessage事件接受消息
         num = event.data;
@@ -34,8 +35,14 @@ myworker.js中:
             postMessage(count);
         }
         add(num);
+        // add(num,num);    //
     };
 
+fn.js :// 3.24更新
+
+    function add (a,b) {
+        return a+b;
+    }
 so easy!
 注:由于 web worker 位于外部文件中，它们无法访问下例 JavaScript 对象：
 1. window 对象
